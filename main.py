@@ -1,7 +1,5 @@
-import sys
 import time
 from requests import get
-from datetime import datetime, timedelta, timezone
 import gtfs_realtime_pb2 as subwaySchema
 from staticUtils import getRouteName, getStopName
 
@@ -71,14 +69,12 @@ def populateTrips(feed) -> dict:
 while(True):
     trips = populateTrips(fetchSubwayData())
     tripsReadable = str({k: str(v) for k, v in trips.items()})
-    # print(tripsReadable)
-
+    
     for trip in trips.items():
         upcomingStopUpdates = trip[1].updates.stop_time_update
         print(str(trip[1]))
         for stopAhead in upcomingStopUpdates:
             print(getStopName(stopAhead.stop_id))
         print("---\n\n")
-        # exit()
 
     time.sleep(5)
