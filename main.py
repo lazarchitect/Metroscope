@@ -5,17 +5,26 @@ from datetime import datetime, timedelta, timezone
 import gtfs_realtime_pb2 as subwaySchema
 from staticUtils import getRouteName, getStopName
 
+StationStatus = {v: k for k, v in subwaySchema.VehiclePosition.VehicleStopStatus.items()}
+
 class Trip:
     def __init__(self, id):
-        self.id = id
+        
+        # high level objects
         self.vehicle = None
         self.updates = None
+
+        # extracted datapoints
+        self.id = id
+        self.status = None
+        self.station = None
+
     def __str__(self) -> str:
         routeId = self.vehicle.trip.route_id
         routeName = getRouteName(routeId)
-        return f'Trip {self.id} on {routeId} ({routeName})'
+        return f'Trip {self.id} on {routeId} ({routeName}) {self.status} {self.station}'
 
-ROUTES = "-nqrw" # leave blank for 1234567S
+ROUTES = "-ace" # leave blank for 1234567S
 SUBWAY_DATA_URL = f"https://api-endpoint.mta.info/Dataservice/mtagtfsfeeds/nyct%2Fgtfs{ROUTES}"
 
 def insertVehicle(trips, vehicle):
@@ -23,6 +32,8 @@ def insertVehicle(trips, vehicle):
     if id not in trips:
         trips[id] = Trip(id)
     trips[id].vehicle = vehicle
+    trips[id].status = StationStatus[vehicle.current_status]
+    trips[id].station = getStopName(vehicle.stop_id) # TODO verify that vehicle.stop_id matches trip_update[0].stop_id. Yeah I dont think the station referenced in the Vehicle data is always correct (seems to be the issue where the train hasnt left the origin terminus yet)
 
 def insertUpdate(trips, tripUpdates):
     id = tripUpdates.trip.trip_id
@@ -31,17 +42,18 @@ def insertUpdate(trips, tripUpdates):
     trips[id].updates = tripUpdates
 
 def insertAlert(trips, alert):
+    print(alert)
     pass # unspecified for now, see reference doc for structure.
     # basically an alert might reference zero or more trips
 
-def fetchSubwayData():
+def fetchSubwayData() -> FeedMessage:
     currentSubwayTripResponse = get(SUBWAY_DATA_URL)
     currentSubwayTrips = currentSubwayTripResponse.content
     feed = subwaySchema.FeedMessage()
     feed.ParseFromString(currentSubwayTrips)
     return feed
 
-def populateTrips(feed):
+def populateTrips(feed) -> dict:
     trips = {}
     entities = feed.entity # actually a list
 
@@ -54,18 +66,19 @@ def populateTrips(feed):
             insertAlert(trips, entity.alert)
         if entity.HasField("vehicle"):
             insertVehicle(trips, entity.vehicle)
-
-    # tripsReadable = str({k: str(v) for k, v in trips.items()})
     return trips
-
 
 while(True):
     trips = populateTrips(fetchSubwayData())
-    iterTrips = iter(trips)
-    for tripId in iterTrips:
-        vehicle = trips[tripId].vehicle
-        stopName = getStopName(vehicle.stop_id)
-        # print(stop)
-        if vehicle.current_status == 0:
-            print(vehicle.current_status," ", stopName)
+    tripsReadable = str({k: str(v) for k, v in trips.items()})
+    # print(tripsReadable)
+
+    for trip in trips.items():
+        upcomingStopUpdates = trip[1].updates.stop_time_update
+        print(str(trip[1]))
+        for stopAhead in upcomingStopUpdates:
+            print(getStopName(stopAhead.stop_id))
+        print("---\n\n")
+        # exit()
+
     time.sleep(5)

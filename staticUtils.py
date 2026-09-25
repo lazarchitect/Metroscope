@@ -16,4 +16,4 @@ def getRouteName(routeId):
     return routes[routeId]
 
 def getStopName(stopCode):
-    return stops.get(stopCode, None)
+    return stops.get(stopCode, f"No Data ({stopCode})")
