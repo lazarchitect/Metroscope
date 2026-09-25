@@ -1,19 +1,20 @@
 import csv
 
-stops = {}
+_stops = {}
 with open("staticData/stops.txt", "r") as stopsFile:
     stopsCsv = csv.reader(stopsFile)
-    for row in stopsCsv:
-        stops[row[0]] = row[1] # keys are stop IDs, values are readable names
+    _stops = {row[0]: row[1] for row in stopsCsv}
+    # keys are stop IDs, values are readable names
 
-routes = {}
+_routes = {}
 with open("staticData/routes.txt", "r") as routesFile:
     routesCsv = csv.reader(routesFile)
-    for row in routesCsv:
-        routes[row[0]] = row[3] # keys are route codes, values are readable names
+    _routes = {row[0]: row[3] for row in routesCsv}
+    # keys are route characters, values are verbose readable names
 
 def getRouteName(routeId):
-    return routes[routeId]
+    return _routes[routeId]
 
 def getStopName(stopCode):
+    # interestingly, some locations in the system do not map to named passenger stations.
     return stops.get(stopCode, f"No Data ({stopCode})")

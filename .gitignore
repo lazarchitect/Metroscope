@@ -1,0 +1,14 @@
+__pycache__/
+
+.pytest_cache/
+
+# Redis
+*.rdb
+*.aof
+*.pid
+
+# Environments
+.env
+.venv
+env/
+ENV/
