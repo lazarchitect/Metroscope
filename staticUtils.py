@@ -17,4 +17,4 @@ def getRouteName(routeId):
 
 def getStopName(stopCode):
     # interestingly, some locations in the system do not map to named passenger stations.
-    return stops.get(stopCode, f"No Data ({stopCode})")
+    return _stops.get(stopCode, f"No Data ({stopCode})")
